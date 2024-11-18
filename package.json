@@ -1,6 +1,7 @@
 {
   "name": "amqp-playground",
   "version": "1.0.0",
+  "type": "module",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -9,6 +10,10 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "amqplib": "^0.10.4"
+    "amqplib": "^0.10.4",
+    "cors": "^2.8.5",
+    "express": "^4.21.1",
+    "graphql-request": "^7.1.0",
+    "mongodb": "^6.10.0"
   }
 }
