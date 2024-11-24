@@ -3,7 +3,8 @@ import cors from "cors";
 import express from "express";
 import { MongoClient } from "mongodb";
 import { request, gql } from "graphql-request";
-import { calculateEndDeviceMetrics } from "./aggregator.js";
+import { calculateEndDeviceMetrics } from "./end-devices-aggregator.js";
+import { calculateExtenderMetrics } from "./extenders-aggregator.js";
 
 const EXCHANGE_NAME = "events"; // Replace with your exchange name
 const EXCHANGE_TYPE = "topic"; // Replace with your exchange type (e.g., 'direct', 'topic', 'fanout', 'headers')
@@ -42,6 +43,9 @@ const locationsQuery = gql`
       flavor
       transmitterProfile {
         name
+        transmitterTypeMappings {
+          txType
+        }
       }
     }
   }
@@ -128,11 +132,11 @@ async function startConsumer() {
         if (msg !== null) {
           // Parse message content
           const message = JSON.parse(msg.content.toString());
-          if (watchList.includes(message.payloadType)) {
-            console.log(`Received message: ${msg.content.toString()}`);
-          } else {
-            console.log(`Ignoring message: ${message.payloadType}`);
-          }
+          // if (watchList.includes(message.payloadType)) {
+          //   console.log(`Received message: ${msg.content.toString()}`);
+          // } else {
+          //   console.log(`Ignoring message: ${message.payloadType}`);
+          // }
 
           // Insert the event into the database
           insertEvent(message);
@@ -191,7 +195,7 @@ async function getEventsInRange(startDate, endDate) {
 // API Endpoints
 
 // GET /events: Fetch events within a date range
-app.get("/end-devices", async (req, res) => {
+app.get("/itr", async (req, res) => {
   const { startDate, endDate } = req.query;
 
   console.log("startDate", startDate);
@@ -209,13 +213,23 @@ app.get("/end-devices", async (req, res) => {
     console.log("Number of Events", events.length);
 
     // Calculate end device metrics
-    const endDeviceMetrics = calculateEndDeviceMetrics(
+    // const endDeviceMetrics = calculateEndDeviceMetrics(
+    //   configData.locations,
+    //   configData.devices,
+    //   events
+    // );
+
+    // Calculate extenders metrics
+    const extenderMetrics = calculateExtenderMetrics(
       configData.locations,
       configData.devices,
       events
     );
 
-    res.json(endDeviceMetrics);
+    res.json({
+      // endDevices: endDeviceMetrics,
+      extenders: extenderMetrics,
+    });
   } catch (error) {
     console.error("Error in GET /events:", error);
     res.status(500).json({ error: "An error occurred while fetching events." });
