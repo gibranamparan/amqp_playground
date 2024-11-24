@@ -73,8 +73,6 @@ export function calculateEndDeviceMetrics(
         };
       }) ?? [];
 
-    console.log("deviceTriggers", deviceTriggers);
-
     return {
       mac,
       isInConfig: !!configDevice,
@@ -253,11 +251,6 @@ function getExtendersVisibilityStats(events) {
     const counts = extenderCount
       .filter((i) => i.senderMac === curr.senderMac)
       .map((i) => i.receiverMacsCount);
-
-    // Debugging
-    //   if (curr.senderMac === "1c:34:f1:1c:1b:94") {
-    //    console.log("counts", counts);
-    //   }
 
     const min = Math.min(...counts);
     const max = Math.max(...counts);

@@ -11,8 +11,10 @@ const EXCHANGE_TYPE = "topic"; // Replace with your exchange type (e.g., 'direct
 const QUEUE_NAME = "global_events"; // Replace with your queue name
 const ROUTING_KEY = "events"; // Replace with the appropriate routing key
 
+const HEADEND_HOST = "headend"; // Replace with your RabbitMQ host
+// const HEADEND_HOST = "dk-8.ensurelink.net"; // Replace with your RabbitMQ host
 // MongoDB configuration
-const MONGO_URI = "mongodb://developer:developer@headend:27017"; // Replace with your MongoDB URI if it's different
+const MONGO_URI = `mongodb://developer:developer@${HEADEND_HOST}:27017`; // Replace with your MongoDB URI if it's different
 const DATABASE_NAME = "test_events";
 const COLLECTION_NAME = "events";
 
@@ -93,7 +95,9 @@ async function insertEvent(eventObject) {
 async function startConsumer() {
   try {
     // Connect to RabbitMQ
-    const connection = await amqp.connect("amqp://developer:developer@headend"); // Replace 'localhost' with your broker URL
+    const connection = await amqp.connect(
+      `amqp://developer:developer@${HEADEND_HOST}`
+    ); // Replace 'localhost' with your broker URL
     console.log("Connected to AMQP broker.");
 
     // Create a channel
@@ -139,7 +143,7 @@ async function startConsumer() {
           // }
 
           // Insert the event into the database
-          insertEvent(message);
+          // insertEvent(message);
 
           // Acknowledge the message
           channel.ack(msg);
@@ -213,11 +217,11 @@ app.get("/itr", async (req, res) => {
     console.log("Number of Events", events.length);
 
     // Calculate end device metrics
-    // const endDeviceMetrics = calculateEndDeviceMetrics(
-    //   configData.locations,
-    //   configData.devices,
-    //   events
-    // );
+    const endDeviceMetrics = calculateEndDeviceMetrics(
+      configData.locations,
+      configData.devices,
+      events
+    );
 
     // Calculate extenders metrics
     const extenderMetrics = calculateExtenderMetrics(
@@ -227,7 +231,7 @@ app.get("/itr", async (req, res) => {
     );
 
     res.json({
-      // endDevices: endDeviceMetrics,
+      endDevices: endDeviceMetrics,
       extenders: extenderMetrics,
     });
   } catch (error) {

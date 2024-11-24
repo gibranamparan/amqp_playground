@@ -18,8 +18,6 @@ export function calculateExtenderMetrics(
 
   let maxMenderArtifact = getMaxVersion(events, "Mender Artifact");
   let maxEndDeviceFirmware = getMaxVersion(events, "End Device Firmware");
-  let allPanIds = getAllPanIds(events);
-  console.log(allPanIds);
 
   const results = Array.from(extendersMacSet).map((mac) => {
     const macForConfig = removeFFEFFromMac(mac);
@@ -47,8 +45,6 @@ export function calculateExtenderMetrics(
       (endDeviceFirmwareVersion &&
         `${endDeviceFirmwareVersion.major}.${endDeviceFirmwareVersion.minor}.${endDeviceFirmwareVersion.build}`) ||
       null;
-
-    const versionCriteria = {};
 
     return {
       mac,
