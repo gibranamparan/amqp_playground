@@ -16,11 +16,7 @@ typeMaps.set("Spot", [
   "smoke-detector",
 ]);
 
-export function calculateEndDeviceMetrics(
-  configLocations,
-  configDevices,
-  events
-) {
+export function calculateEndDeviceMetrics(configDevices, events) {
   // Get a set of all end devices MAC addresses
   const devicesMacSet = new Set();
 
@@ -40,8 +36,8 @@ export function calculateEndDeviceMetrics(
   const extenderVisibilityStats = getExtendersVisibilityStats(events);
   // Prepare the report results
   let results = Array.from(devicesMacSet).map((mac) => {
-    const locInfo = locationInfo(mac, configLocations);
     const configDevice = configDevices.find((device) => device.mac === mac);
+    const locInfo = locationInfo(configDevice);
     const configDeviceType = configDevice?.flavor;
 
     const latestEndDeviceEvent = getLatestDeviceEvent(mac, events);
@@ -134,10 +130,8 @@ export function calculateEndDeviceMetrics(
   return results;
 }
 
-function locationInfo(mac, configLocations) {
-  const loc = configLocations.find((i) =>
-    i.devices.some((device) => device.mac === mac)
-  );
+function locationInfo(configDevice) {
+  const loc = configDevice.location;
 
   if (!loc) return null;
 

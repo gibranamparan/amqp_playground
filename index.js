@@ -22,27 +22,22 @@ const COLLECTION_NAME = "events";
 let client;
 
 // Locations GQL query
-const locationsQuery = gql`
+const configQuery = gql`
   query {
-    locations {
-      id
-      locationType
-      name
-      ancestors {
-        id
-        locationType
-        name
-      }
-      devices {
-        id
-        mac
-        flavor
-      }
-    }
     devices {
       mac
       name
       flavor
+      location {
+        id
+        name
+        locationType
+        ancestors {
+          id
+          locationType
+          name
+        }
+      }
       transmitterProfile {
         name
         transmitterTypeMappings {
@@ -54,7 +49,8 @@ const locationsQuery = gql`
 `;
 
 const endpoint = "http://localhost:5000/graphql";
-const configData = await request(endpoint, locationsQuery);
+console.log("Fetching Config Data...");
+const configData = await request(endpoint, configQuery);
 
 async function connectToDatabase() {
   if (!client) {
@@ -142,8 +138,7 @@ async function startConsumer() {
           //   console.log(`Ignoring message: ${message.payloadType}`);
           // }
 
-          // Insert the event into the database
-          // insertEvent(message);
+          insertEvent(message);
 
           // Acknowledge the message
           channel.ack(msg);
@@ -218,14 +213,12 @@ app.get("/itr", async (req, res) => {
 
     // Calculate end device metrics
     const endDeviceMetrics = calculateEndDeviceMetrics(
-      configData.locations,
       configData.devices,
       events
     );
 
     // Calculate extenders metrics
     const extenderMetrics = calculateExtenderMetrics(
-      configData.locations,
       configData.devices,
       events
     );

@@ -1,8 +1,4 @@
-export function calculateExtenderMetrics(
-  configLocations,
-  configDevices,
-  events
-) {
+export function calculateExtenderMetrics(configDevices, events) {
   // Collect all the MAC addresses from config and events
   const extendersMacSet = new Set();
   events
@@ -10,8 +6,10 @@ export function calculateExtenderMetrics(
     .map((i) => i.payload.checkinList)
     .flat()
     .forEach((i) => extendersMacSet.add(i.mac));
+
+  const flavorsToInclude = ["extender", "director"];
   configDevices.forEach((device) => {
-    if (device.flavor === "extender") {
+    if (flavorsToInclude.includes(device.flavor)) {
       extendersMacSet.add(insertFFEFIntoMac(device.mac));
     }
   });
@@ -21,15 +19,27 @@ export function calculateExtenderMetrics(
 
   const results = Array.from(extendersMacSet).map((mac) => {
     const macForConfig = removeFFEFFromMac(mac);
-    const configDevice = configDevices.find(
+    const latestCheckin = getLatestCheckinByMac(mac, events);
+    const hardwareType = latestCheckin?.alias
+      ? latestCheckin?.alias === "00:00"
+        ? "director"
+        : "extender"
+      : null;
+
+    let configDevice = configDevices.find(
       (device) => device.mac === macForConfig
+      // ||
+      //   (device.mac !== macForConfig &&
+      //     hardwareType === "director" &&
+      //     device.flavor === "director")
     );
 
+    if (hardwareType === "director") {
+      console.log("Director found", configDevice);
+    }
+
     const extenderActivity = calculateExtenderActivity(mac, events);
-    const locInfo = locationInfo(macForConfig, configLocations);
-    const latestCheckin = getLatestCheckinByMac(mac, events);
-    const hardwareType =
-      latestCheckin?.alias === "00:00" ? "director" : "extender";
+    const locInfo = locationInfo(configDevice);
     const versions = latestCheckin?.versions ?? [];
     let menderArtifact = versions.find((i) => i.name === "Mender Artifact");
 
@@ -64,8 +74,10 @@ export function calculateExtenderMetrics(
       wifiActivePercentage: extenderActivity.wifiActivePercentage,
       neighborsCount: Math.floor(Math.random() * 10),
       criteria: {
-        isMenderArtifactUpToDate: menderArtifact === maxMenderArtifact,
+        isMenderArtifactUpToDate:
+          !!maxMenderArtifact && menderArtifact === maxMenderArtifact,
         isEndDeviceFirmwareUpToDate:
+          !!maxEndDeviceFirmware &&
           endDeviceFirmwareVersion === maxEndDeviceFirmware,
         isZigbeeActivityAcceptable:
           extenderActivity.zigbeeActivePercentage > 90,
@@ -79,10 +91,8 @@ export function calculateExtenderMetrics(
   return results;
 }
 
-function locationInfo(mac, configLocations) {
-  const loc = configLocations.find((i) =>
-    i.devices.some((device) => device.mac === mac)
-  );
+function locationInfo(configDevice) {
+  const loc = configDevice?.location;
 
   if (!loc) return null;
 
@@ -106,6 +116,8 @@ function getLatestCheckinByMac(mac, events) {
       i.payloadType === "extender-checkins" &&
       i.payload.checkinList.some((i) => i.mac === mac)
   );
+
+  console.log("Data", data);
   data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   const checkinlist = (data[0] && data[0].payload.checkinList) || [];
   return checkinlist.find((i) => i.mac === mac);
